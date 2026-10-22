@@ -15,8 +15,9 @@ backend must be deployed separately because GitHub Pages cannot run `server.js`.
    - `RESEND_FROM_EMAIL`: a sender address on a domain verified in Resend, for
      example `Feedback <feedback@your-verified-domain.com>`.
    - `FRONTEND_ORIGIN`: the exact GitHub Pages origin, for example
-     `https://username.github.io`. For multiple trusted origins, separate them
-     with commas. Do not include a repository path or trailing slash.
+     `https://rhonelcustodio.github.io`. For multiple trusted origins, separate
+     them with commas. The server normalizes any path or trailing slash to the
+     origin, but the recommended value is only the origin.
 
 5. Deploy and copy the service's HTTPS origin, for example
    `https://your-service.onrender.com`.

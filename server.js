@@ -6,11 +6,19 @@ const port = Number(process.env.PORT) || 3000;
 const maxBodySize = 16 * 1024;
 const resendFromEmail =
   process.env.RESEND_FROM_EMAIL || 'Feedback System <onboarding@resend.dev>';
+const configuredOrigins =
+  process.env.FRONTEND_ORIGIN ||
+  'https://rhonelcustodio.github.io,http://localhost:3000,http://127.0.0.1:3000,http://localhost:5501';
 const allowedOrigins = new Set(
-  (process.env.FRONTEND_ORIGIN ||
-    'http://localhost:3000,http://127.0.0.1:3000,http://localhost:5501')
+  configuredOrigins
     .split(',')
-    .map((origin) => origin.trim())
+    .map((origin) => {
+      try {
+        return new URL(origin.trim()).origin;
+      } catch {
+        throw new Error(`Invalid origin in FRONTEND_ORIGIN: ${origin}`);
+      }
+    })
     .filter(Boolean)
 );
 

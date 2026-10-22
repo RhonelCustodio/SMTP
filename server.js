@@ -125,17 +125,30 @@ async function handleEmailRequest(request, response) {
       }),
     });
 
-    const result = await resendResponse.json();
+    const responseText = await resendResponse.text();
+    let result;
+    try {
+      result = responseText ? JSON.parse(responseText) : {};
+    } catch {
+      result = {};
+    }
+
     if (!resendResponse.ok) {
-      console.error('Resend rejected the email request:', result);
-      sendJson(response, 502, { error: 'Unable to send feedback' });
+      const providerMessage =
+        typeof result.message === 'string'
+          ? result.message.slice(0, 500)
+          : 'Resend rejected the email request.';
+      console.error(`Resend rejected the email request (HTTP ${resendResponse.status}):`, result);
+      sendJson(response, 502, { error: `Email provider error: ${providerMessage}` });
       return;
     }
 
     sendJson(response, 200, { success: true, data: result });
   } catch (error) {
     console.error('Failed to send feedback email:', error);
-    sendJson(response, 502, { error: 'Unable to send feedback' });
+    sendJson(response, 502, {
+      error: 'Unable to reach the email provider. Check the backend service logs and try again.',
+    });
   }
 }
 

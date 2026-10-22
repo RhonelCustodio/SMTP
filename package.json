@@ -1,0 +1,12 @@
+{
+  "name": "smtp-test-feedback",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Feedback form with a Resend email API backend",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

@@ -5,11 +5,34 @@ const path = require('node:path');
 const port = Number(process.env.PORT) || 3000;
 const maxBodySize = 16 * 1024;
 const resendFromEmail =
-  process.env.RESEND_FROM_EMAIL || 'Feedback System <mprvtccntlocked@gmail.com>';
+  process.env.RESEND_FROM_EMAIL || 'Feedback System <onboarding@resend.dev>';
+const allowedOrigins = new Set(
+  (process.env.FRONTEND_ORIGIN ||
+    'http://localhost:3000,http://127.0.0.1:3000,http://localhost:5501')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean)
+);
 
 function sendJson(response, status, payload) {
   response.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8' });
   response.end(JSON.stringify(payload));
+}
+
+function applyCors(request, response) {
+  const origin = request.headers.origin;
+  if (!origin) return true;
+
+  if (!allowedOrigins.has(origin)) {
+    sendJson(response, 403, { error: 'Origin is not allowed' });
+    return false;
+  }
+
+  response.setHeader('Access-Control-Allow-Origin', origin);
+  response.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  response.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  response.setHeader('Vary', 'Origin');
+  return true;
 }
 
 function escapeHtml(value) {
@@ -112,6 +135,14 @@ const server = http.createServer(async (request, response) => {
   const requestUrl = new URL(request.url, `http://${request.headers.host || 'localhost'}`);
 
   if (requestUrl.pathname === '/api/emails') {
+    if (!applyCors(request, response)) return;
+
+    if (request.method === 'OPTIONS') {
+      response.writeHead(204);
+      response.end();
+      return;
+    }
+
     if (request.method !== 'POST') {
       response.setHeader('Allow', 'POST');
       sendJson(response, 405, { error: 'Method not allowed' });
@@ -139,6 +170,6 @@ const server = http.createServer(async (request, response) => {
   response.end('Not found');
 });
 
-server.listen(port, '127.0.0.1', () => {
-  console.log(`Feedback app running at http://localhost:${port}`);
+server.listen(port, '0.0.0.0', () => {
+  console.log(`Feedback app listening on port ${port}`);
 });

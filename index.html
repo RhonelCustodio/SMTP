@@ -101,6 +101,8 @@
 
 <script>
   let selectedRating = null;
+  // Set this to the deployed backend origin for GitHub Pages, e.g. https://your-api.onrender.com.
+  const API_BASE_URL = '';
 
   function setRating(value) {
     selectedRating = value;
@@ -136,7 +138,7 @@
     message.textContent = "Sending feedback...";
 
     try {
-      const response = await fetch('/api/emails', {
+      const response = await fetch(`${API_BASE_URL.replace(/\/$/, '')}/api/emails`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -153,7 +155,7 @@
       if (!response.ok) {
         if (response.status === 405 || response.status === 404) {
           throw new Error(
-            'The feedback API is unavailable. Start the backend with "node --env-file=.env server.js" and open http://localhost:3000.'
+            'The feedback API endpoint was not found. Check API_BASE_URL in index.html and confirm the backend is deployed.'
           );
         }
         throw new Error(result?.error || `Unable to send feedback (HTTP ${response.status}).`);

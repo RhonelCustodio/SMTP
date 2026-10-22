@@ -4,6 +4,8 @@ const path = require('node:path');
 
 const port = Number(process.env.PORT) || 3000;
 const maxBodySize = 16 * 1024;
+const resendFromEmail =
+  process.env.RESEND_FROM_EMAIL || 'Feedback System <mprvtccntlocked@gmail.com>';
 
 function sendJson(response, status, payload) {
   response.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8' });
@@ -73,7 +75,7 @@ async function handleEmailRequest(request, response) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: 'Feedback System <onboarding@resend.dev>',
+        from: resendFromEmail,
         to: ['mprvtccntlocked@gmail.com'],
         reply_to: userEmail,
         subject: `New Feedback Received - Rating: ${userRating}`,

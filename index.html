@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Submit Feedback</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: #fcfcfc;
+      display: flex;
+      justify-content: center;
+      padding: 40px 20px;
+      color: #111;
+    }
+    .feedback-card {
+      background: white;
+      max-width: 480px;
+      width: 100%;
+      padding: 32px;
+      border-radius: 12px;
+      border: 1px solid #e5e5e5;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+    }
+    h2 { margin-top: 0; font-size: 24px; font-weight: 600; }
+    p { color: #666; font-size: 14px; margin-bottom: 24px; }
+    .form-group { margin-bottom: 20px; }
+    label { display: block; font-weight: 500; font-size: 14px; margin-bottom: 6px; }
+    input[type="email"], textarea {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      box-sizing: border-box;
+      font-size: 14px;
+    }
+    textarea { height: 100px; resize: vertical; }
+    .rating-group { display: flex; gap: 8px; }
+    .rating-btn {
+      flex: 1;
+      padding: 10px;
+      border: 1px solid #ccc;
+      background: white;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+    .rating-btn.selected {
+      background: #000;
+      color: white;
+      border-color: #000;
+    }
+    .submit-btn {
+      width: 100%;
+      padding: 12px;
+      background: #000;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-weight: 500;
+      font-size: 15px;
+      cursor: pointer;
+    }
+    .submit-btn:hover { background: #222; }
+  </style>
+</head>
+<body>
+
+<div class="feedback-card">
+  <h2>Share your feedback</h2>
+  <p>Let us know how your experience was so we can improve our service.</p>
+  
+  <form id="feedbackForm">
+    <div class="form-group">
+      <label for="email">Email Address</label>
+      <input type="email" id="email" required placeholder="you@example.com">
+    </div>
+
+    <div class="form-group">
+      <label>How would you rate us?</label>
+      <div class="rating-group">
+        <button type="button" class="rating-btn" onclick="setRating(1)">1</button>
+        <button type="button" class="rating-btn" onclick="setRating(2)">2</button>
+        <button type="button" class="rating-btn" onclick="setRating(3)">3</button>
+        <button type="button" class="rating-btn" onclick="setRating(4)">4</button>
+        <button type="button" class="rating-btn" onclick="setRating(5)">5</button>
+      </div>
+      <input type="hidden" id="rating" required>
+    </div>
+
+    <div class="form-group">
+      <label for="comments">Comments</label>
+      <textarea id="comments" required placeholder="What can we do better?"></textarea>
+    </div>
+
+    <button type="submit" class="submit-btn">Submit Feedback</button>
+    <p id="formMessage" role="status" aria-live="polite"></p>
+  </form>
+</div>
+
+<script>
+  let selectedRating = null;
+
+  function setRating(value) {
+    selectedRating = value;
+    document.getElementById('rating').value = value + " / 5";
+    
+    // Toggle active visual states
+    document.querySelectorAll('.rating-btn').forEach((btn, idx) => {
+      if (idx === value - 1) {
+        btn.classList.add('selected');
+      } else {
+        btn.classList.remove('selected');
+      }
+    });
+  }
+
+  document.getElementById('feedbackForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const form = e.currentTarget;
+    const message = document.getElementById('formMessage');
+    if (!selectedRating) {
+      message.textContent = "Please select a rating score.";
+      return;
+    }
+
+    const submitButton = form.querySelector('.submit-btn');
+    const payload = {
+      userEmail: document.getElementById('email').value,
+      userRating: document.getElementById('rating').value,
+      userComments: document.getElementById('comments').value
+    };
+
+    submitButton.disabled = true;
+    message.textContent = "Sending feedback...";
+
+    try {
+      const response = await fetch('/api/emails', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      const responseText = await response.text();
+      let result;
+      try {
+        result = responseText ? JSON.parse(responseText) : null;
+      } catch {
+        result = null;
+      }
+
+      if (!response.ok) {
+        if (response.status === 405 || response.status === 404) {
+          throw new Error(
+            'The feedback API is unavailable. Start the backend with "node --env-file=.env server.js" and open http://localhost:3000.'
+          );
+        }
+        throw new Error(result?.error || `Unable to send feedback (HTTP ${response.status}).`);
+      }
+      if (!result) {
+        throw new Error('The server returned an invalid response. Please try again.');
+      }
+
+      message.textContent = "Feedback sent successfully!";
+      form.reset();
+      selectedRating = null;
+      document.querySelectorAll('.rating-btn').forEach((btn) => {
+        btn.classList.remove('selected');
+      });
+    } catch (err) {
+      console.error("Submission failed:", err);
+      message.textContent = err instanceof Error
+        ? err.message
+        : "Unable to send feedback. Please try again.";
+    } finally {
+      submitButton.disabled = false;
+    }
+  });
+</script>
+</body>
+</html>
